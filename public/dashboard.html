@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Private Location Dashboard</title>
+</head>
+<body>
+  <h1>Private Location Dashboard</h1>
+
+  <label for="key">Dashboard Access Key:</label>
+  <input id="key" type="password" autocomplete="current-password">
+
+  <button id="check">Check Location</button>
+  <p id="result">No location loaded yet.</p>
+
+  <script>
+    document.getElementById("check").onclick = async () => {
+      const result = document.getElementById("result");
+      const key = document.getElementById("key").value;
+
+      result.textContent = "Loading...";
+
+      try {
+        const response = await fetch("/api/location", {
+          headers: {
+            "Authorization": "Bearer " + key
+          }
+        });
+
+        if (response.status === 401) {
+          result.textContent = "Incorrect access key.";
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("Request failed");
+        }
+
+        const data = await response.json();
+
+        if (!data) {
+          result.textContent =
+            "No location has been shared yet.";
+          return;
+        }
+
+        result.replaceChildren();
+
+        const coordinates = document.createElement("p");
+        coordinates.textContent =
+          "Latitude: " + data.latitude +
+          " | Longitude: " + data.longitude;
+
+        const time = document.createElement("p");
+        time.textContent = "Shared at: " + data.sharedAt;
+
+        const map = document.createElement("a");
+        map.href =
+          "https://www.google.com/maps?q=" +
+          data.latitude + "," + data.longitude;
+        map.target = "_blank";
+        map.rel = "noopener noreferrer";
+        map.textContent = "Open in Google Maps";
+
+        result.append(coordinates, time, map);
+      } catch (error) {
+        result.textContent =
+          "Unable to connect to the server.";
+      }
+    };
+  </script>
+</body>
+</html>
