@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Location Sharing</title>
+</head>
+<body>
+  <h1>Location Sharing</h1>
+
+  <p>
+    Share your current location with your consent.
+    Your location will be shared only after you
+    press the button and allow location access.
+  </p>
+
+  <button id="share">Share My Location</button>
+  <p id="status">Ready to share.</p>
+
+  <script>
+    const button = document.getElementById("share");
+    const status = document.getElementById("status");
+
+    button.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        status.textContent =
+          "Geolocation is not supported by this browser.";
+        return;
+      }
+
+      button.disabled = true;
+      status.textContent =
+        "Waiting for location permission...";
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const response = await fetch("/api/location", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              })
+            });
+
+            if (!response.ok) {
+              throw new Error("Request failed");
+            }
+
+            status.textContent =
+              "Your location was shared successfully.";
+          } catch (error) {
+            status.textContent =
+              "Unable to share location. Please try again.";
+          } finally {
+            button.disabled = false;
+          }
+        },
+        () => {
+          status.textContent =
+            "Location unavailable. Please allow access and enable GPS.";
+          button.disabled = false;
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+      );
+    });
+  </script>
+</body>
+</html>
